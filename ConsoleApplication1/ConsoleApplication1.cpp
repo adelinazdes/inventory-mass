@@ -170,24 +170,24 @@ int main()
     u.massiv = { 10e-6 }; //значения кинемат. вязкости на входе трубы
 
 
-    znachenia time;
-    time.massiv = { 0 };
+    znachenia pressure;
+    pressure.massiv = { 0 };
 
 
     vector<double> ro_begin(myPipe.N, 900);
 
     vector<double> u_begin(myPipe.N, 15e-6);
 
-    vector<double> time_begin(myPipe.N, 0);
+    vector<double>  pressure_begin(myPipe.N, 0);
 
 
-    ring_buffer_t<vector<vector<double>>> buffer(2, { ro_begin, u_begin, time_begin });
+    ring_buffer_t<vector<vector<double>>> buffer(2, { ro_begin, u_begin,  pressure_begin });
 
     for (size_t i = 0; i < myPipe.get_n(); i++) {
         rashet(myPipe, ro.massiv[0], buffer.current()[0], buffer.previous()[0]);
         rashet(myPipe, u.massiv[0], buffer.current()[1], buffer.previous()[1]);
 
-        excel(myPipe, buffer, i, time);
+        excel(myPipe, buffer, i, pressure);
         buffer.advance(1);
 
     }
