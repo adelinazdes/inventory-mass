@@ -114,15 +114,16 @@ void excel(pipe myPipe, ring_buffer_t<vector<vector<double>>>& buffer, int i, zn
         ofstream outFile("3block.csv");
         outFile << "время,координата,плотность, вязкость, давление" << "\n";
         // Записать значения текущего слоя в файл
-        
+
         for (size_t j = 1; j < current_layer[0].size(); j++) {
-            double Re = myPipe.V  * myPipe.get_inner_diameter() / current_layer[1][j];
+
+            double Re = myPipe.V * myPipe.get_inner_diameter() / current_layer[1][j];
             double lambda = hydraulic_resistance_isaev(Re, myPipe.get_relative_roughness());
             current_layer[2][j] = p_0;
             double p_rachet = p_0 + myPipe.get_dx() * (lambda / myPipe.get_inner_diameter() * current_layer[0][j - 1] * pow(myPipe.V, 2) / 2 - M_G * current_layer[0][j - 1] * (myPipe.z_L - myPipe.z_0) / ((myPipe.N - 1) * myPipe.get_dx()));
             p_0 = p_rachet;
 
-            outFile << i * myPipe.get_dt() << "," << j * myPipe.get_dx() << "," << current_layer[0][j] << "," << current_layer[1][j] << "," << current_layer[2][j] << "\n";
+            outFile << i * myPipe.get_dt() << "," << (j - 1) * myPipe.get_dx() << "," << current_layer[0][j] << "," << current_layer[1][j] << "," << current_layer[2][j] << "\n";
         }
         outFile.close();
     }
@@ -136,7 +137,7 @@ void excel(pipe myPipe, ring_buffer_t<vector<vector<double>>>& buffer, int i, zn
             double p_rachet = p_0 + myPipe.get_dx() * (lambda / myPipe.get_inner_diameter() * current_layer[0][j - 1] * pow(myPipe.V, 2) / 2 - M_G * current_layer[0][j - 1] * (myPipe.z_L - myPipe.z_0) / ((myPipe.N - 1) * myPipe.get_dx()));
             p_0 = p_rachet;
 
-            outFile << i * myPipe.get_dt() << "," << j * myPipe.get_dx() << "," << current_layer[0][j] << "," << current_layer[1][j] << "," << current_layer[2][j] << "\n";
+            outFile << i * myPipe.get_dt() << "," << (j - 1) * myPipe.get_dx() << "," << current_layer[0][j] << "," << current_layer[1][j] << "," << current_layer[2][j] << "\n";
         }
         outFile.close();
     }
@@ -157,7 +158,7 @@ int main()
     myPipe.z_0 = 100;
     myPipe.z_L = 50;
     myPipe.V = 0.5;
-    myPipe.N = 10;
+    myPipe.N = 100;
     myPipe.abc = 15e-6;
     znachenia ro;
 
@@ -185,7 +186,7 @@ int main()
     for (size_t i = 0; i < myPipe.get_n(); i++) {
         rashet(myPipe, ro.massiv[0], buffer.current()[0], buffer.previous()[0]);
         rashet(myPipe, u.massiv[0], buffer.current()[1], buffer.previous()[1]);
-       
+
         excel(myPipe, buffer, i, time);
         buffer.advance(1);
 
