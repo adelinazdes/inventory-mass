@@ -220,7 +220,7 @@ int main()
 
 
     znachenia pressure;
-    pressure.massiv = vector<double>(myPipe.get_n());
+    pressure.massiv = { 0 };
 
 
     vector<double> ro_begin(myPipe.N, 900);
@@ -230,7 +230,7 @@ int main()
     vector<double>  pressure_begin(myPipe.N, 0);
 
 
-    string path = "nachalo_1.2.txt";
+    string path = "nachalo_1.2.xlsx";
     ifstream file;
     file.open(path);
     if (file.is_open())
@@ -251,16 +251,24 @@ int main()
             ro.massiv.push_back(value);
         }
     }
-
+    if (!file.is_open()) {
+    cerr << "Ошибка открытия файла: " << filename << endl;
+    // Проверка на специфические условия ошибок
     if (file.bad()) {
-        cout << "Ошибка чтения из файла" << endl;
-        
+        cerr << "Критическая ошибка: установлен флаг badbit." << endl;
     }
+    if (file.fail()) {
+        // Вывод более подробного сообщения об ошибке с использованием strerror
+        cerr << "Подробности об ошибке: " << strerror(errno) << endl;
+    }
+    // Обработка ошибки или выход из программы
+    return 1;
+}
 
     file.close();
 
 
-    ring_buffer_t<vector<vector<double>>> buffer(2, { ro_begin, u_begin,  pressure_begin,  pressure_begin });
+    ring_buffer_t<vector<vector<double>>> buffer(2, { ro_begin, u_begin,  pressure_begin });
 
     for (size_t i = 0; i < myPipe.get_n(); i++) {
         rashet(myPipe, ro.massiv[i], buffer.current()[0], buffer.previous()[0]);

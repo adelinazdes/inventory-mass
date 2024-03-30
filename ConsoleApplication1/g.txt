@@ -1,4 +1,4 @@
-﻿
+
 #include <iomanip>
 #include <iostream>
 #include <clocale>
@@ -88,17 +88,15 @@ struct znachenia
 
 void rashet(pipe myPipe, double parametr, vector<double>& current_layer, vector<double>& previous_layer) {
 
-    
+    current_layer[0] = parametr;
 
     //смещение предыдущего слоя и запись граничного условия
     for (size_t j = 1; j < myPipe.get_n(); j++)
     {
-        current_layer[0] = parametr;
         for (size_t i = 1; i < myPipe.N; i++)
         {
             current_layer[i] = previous_layer[i - 1];
         }
-        
     }
 }
 
@@ -211,16 +209,16 @@ int main()
     myPipe.abc = 15e-6;
     znachenia ro;
 
-    ro.massiv = vector<double>(myPipe.get_n()); //значения плотности на входе трубы
+    ro.massiv = { 800 }; //значения плотности на входе трубы
 
     
     znachenia u;
 
-    u.massiv = vector<double>(myPipe.get_n()); //значения кинемат. вязкости на входе трубы
+    u.massiv = { 10e-6 }; //значения кинемат. вязкости на входе трубы
 
 
     znachenia pressure;
-    pressure.massiv = vector<double>(myPipe.get_n());
+    pressure.massiv = { 0 };
 
 
     vector<double> ro_begin(myPipe.N, 900);
@@ -230,10 +228,10 @@ int main()
     vector<double>  pressure_begin(myPipe.N, 0);
 
 
-    string path = "nachalo_1.2.txt";
-    ifstream file;
-    file.open(path);
-    if (file.is_open())
+    string path = "1.2.xlsx";
+    ifstream fin;
+    fin.open(path);
+    if (fin.is_open())
     {
 
         cout << "Файл открыт" << endl;
@@ -243,28 +241,19 @@ int main()
     {
         cout << "Файл не открыт" << endl;
     }
-    
-   
-    if (file.is_open()) {
-        double value;
-        while (file >> value) {
-            ro.massiv.push_back(value);
-        }
-    }
-
-    if (file.bad()) {
-        cout << "Ошибка чтения из файла" << endl;
-        
-    }
-
-    file.close();
+    // Заполняем массив значениями из первого столбца
+    for (size_t i = 0; i < myPipe.N; ++i) {
+       pressure_begin[i] = ws.cell(xlnt::cell_reference(i + 2, 1)).value<double>(); // +2, потому что индексация начинается с 1, а первая строка - заголовки
+   }
 
 
-    ring_buffer_t<vector<vector<double>>> buffer(2, { ro_begin, u_begin,  pressure_begin,  pressure_begin });
+
+
+    ring_buffer_t<vector<vector<double>>> buffer(2, { ro_begin, u_begin,  pressure_begin,pressure_begin });
 
     for (size_t i = 0; i < myPipe.get_n(); i++) {
-        rashet(myPipe, ro.massiv[i], buffer.current()[0], buffer.previous()[0]);
-        rashet(myPipe, u.massiv[i], buffer.current()[1], buffer.previous()[1]);
+        rashet(myPipe, ro.massiv[0], buffer.current()[0], buffer.previous()[0]);
+        rashet(myPipe, u.massiv[0], buffer.current()[1], buffer.previous()[1]);
 
         excel(myPipe, buffer, i, pressure);
         buffer.advance(1);
