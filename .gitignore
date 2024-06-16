@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/ConsoleApplication1/3block_1.1.csv
+/ConsoleApplication1/pressure_last_1.1.csv
+/ConsoleApplication1/3block_1.2.csv
