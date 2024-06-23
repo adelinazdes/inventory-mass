@@ -331,7 +331,7 @@ vector<double> time_step_characteristics_method (pipe myPipe, double& input_Q, i
     return time_modeling;
 }
 
-double interpolation(double time_modeling, vector<double>& input) {
+double interpolation_scalar(double time_modeling, vector<double>& input) {
     double interpolation_value;
     double step_diskretizatsii = 2000;
     double step = time_modeling/ step_diskretizatsii;
@@ -360,6 +360,21 @@ double interpolation(double time_modeling, vector<double>& input) {
            interpolation_value = y;
    return interpolation_value;
 }
+
+
+
+vector<double> interpolation_vector(vector<double> time_modeling, vector<double>& input) {
+    vector<double> interpolation_value;
+    double step_diskretizatsii = 2000;
+    for (size_t i = 0; i < time_modeling.size(); i++) {
+        interpolation_value.push_back(interpolation_scalar(time_modeling[i], input));
+        
+    }
+    return interpolation_value;
+}
+
+
+
 
 
 /// @brief задача 3
@@ -439,24 +454,20 @@ TEST(BLOCK3, TASK3) {
 
     for (size_t i = 0; i < total_layers; i++) {
         time_modeling = time_step_characteristics_method(myPipe, Q_int[i], i, time_modeling);
-        Q_int.push_back(interpolation(time_modeling[i + 1], Q));
-        //вектор состоящий из зна-ий при интепроляции
-        ro_int.push_back(interpolation(time_modeling[i], ro));
-        u_int.push_back(interpolation(time_modeling[i], u));
-        pressure_int.push_back(interpolation(time_modeling[i], pressure));
-      
+        Q_int.push_back(interpolation_scalar(time_modeling[i + 1], Q));
+             
     }
 
+    //вектор состоящий из зна-ий при интепроляции
+    ro_int = interpolation_vector(time_modeling, ro);
+    u_int = interpolation_vector(time_modeling, u);
+    pressure_int = interpolation_vector(time_modeling, pressure);
 
-  
-   
-    
     ring_buffer_t<vector<vector<double>>> buffer(2, { ro_begin, u_begin,pressure_begin });
 
     vector<double> pressure_first_layer;// вектор содержащий значения давлений первого слоя 
         
     for (size_t i = 0; i < total_layers; i++) {
-
         myPipe.Q = Q_int[i];
         myPipe.V = myPipe.get_V();
         myPipe.p_0 = pressure_int[i];
