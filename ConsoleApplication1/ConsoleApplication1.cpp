@@ -314,7 +314,7 @@ pipe block3_task3_pipe()
 
 
 
-vector<double> characteristics_method (pipe myPipe, double& input_Q, int i, vector<double> time_modeling) {
+vector<double> time_step_characteristics_method (pipe myPipe, double& input_Q, int i, vector<double> time_modeling) {
      
     myPipe.Q = input_Q;
     myPipe.V = myPipe.get_V();
@@ -435,27 +435,16 @@ TEST(BLOCK3, TASK3) {
     vector<double> u_int;
     vector<double> pressure_int;
 
+    Q_int.push_back(Q[0]);
+
     for (size_t i = 0; i < total_layers; i++) {
-
-        if (i == 0) {
-            Q_int.push_back(Q[i]);
-            time_modeling = characteristics_method(myPipe, Q[0], i, time_modeling);
-            Q_int.push_back(interpolation(time_modeling[i + 1], Q));
-            //вектор состоящий из зна-ий при интепроляции
-            ro_int.push_back(interpolation(time_modeling[i], ro));
-            u_int.push_back(interpolation(time_modeling[i], u));
-            pressure_int.push_back(interpolation(time_modeling[i], pressure));
-        }
-        else
-        {
-            time_modeling = characteristics_method(myPipe, Q_int[i], i, time_modeling);
-            Q_int.push_back(interpolation(time_modeling[i+1], Q));
-            //вектор состоящий из зна-ий при интепроляции
-            ro_int.push_back(interpolation(time_modeling[i], ro));
-            u_int.push_back(interpolation(time_modeling[i], u));
-            pressure_int.push_back(interpolation(time_modeling[i], pressure));
-
-        }
+        time_modeling = time_step_characteristics_method(myPipe, Q_int[i], i, time_modeling);
+        Q_int.push_back(interpolation(time_modeling[i + 1], Q));
+        //вектор состоящий из зна-ий при интепроляции
+        ro_int.push_back(interpolation(time_modeling[i], ro));
+        u_int.push_back(interpolation(time_modeling[i], u));
+        pressure_int.push_back(interpolation(time_modeling[i], pressure));
+      
     }
 
 
@@ -467,34 +456,22 @@ TEST(BLOCK3, TASK3) {
     vector<double> pressure_first_layer;// вектор содержащий значения давлений первого слоя 
         
     for (size_t i = 0; i < total_layers; i++) {
+
+        myPipe.Q = Q_int[i];
+        myPipe.V = myPipe.get_V();
+        myPipe.p_0 = pressure_int[i];
+        myPipe.time = time_modeling[i];
+        euler(myPipe, buffer, i);
+        excel_last_pressure("pressure_last_1.3.csv", myPipe, buffer.previous(), i);
+        party_layer(myPipe, ro_int[i], buffer.current()[0], buffer.previous()[0]);
+        party_layer(myPipe, u_int[i], buffer.current()[1], buffer.previous()[1]);
         if (i == 0) {
-            myPipe.Q = Q_int[i];
-            myPipe.V = myPipe.get_V();
-            myPipe.p_0 = pressure[i];
-            myPipe.time = time_modeling[i];
-            euler(myPipe, buffer, i);
-            excel_last_pressure("pressure_last_1.3.csv", myPipe, buffer.previous(), i);
-            party_layer(myPipe, ro_int[i], buffer.current()[0], buffer.previous()[0]);
-            party_layer(myPipe, u_int[i], buffer.current()[1], buffer.previous()[1]);
             pressure_first_layer = euler(myPipe, buffer, i);
-            excel("3block_1.3.csv", myPipe, buffer.previous(), i, pressure_first_layer);
-            buffer.advance(1);        
         }
-        else {
-            myPipe.Q = Q_int[i];
-            myPipe.V = myPipe.get_V();
-            myPipe.p_0 = pressure_int[i];
-            myPipe.time = time_modeling[i];
-            euler(myPipe, buffer, i);
-            excel_last_pressure("pressure_last_1.3.csv", myPipe, buffer.previous(), i);
-            party_layer(myPipe, ro_int[i], buffer.current()[0], buffer.previous()[0]);
-            party_layer(myPipe, u_int[i], buffer.current()[1], buffer.previous()[1]);
-            excel("3block_1.3.csv", myPipe, buffer.previous(), i, pressure_first_layer);
-            buffer.advance(1);
-            cout << pressure_int[i] << ", ";
-            cout << ro_int[i] << ",";
-        }
-    }
+        excel("3block_1.3.csv", myPipe, buffer.previous(), i, pressure_first_layer);
+        buffer.advance(1);
+          
+     }
         
 
 
