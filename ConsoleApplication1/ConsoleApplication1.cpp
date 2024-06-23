@@ -314,33 +314,29 @@ pipe block3_task3_pipe()
 
 
 
-vector<double> characteristics_method (pipe myPipe, vector<double>& input_Q) {
-    vector<double> time_modeling; 
-    time_modeling.push_back(0.0);
-    for (size_t i = 0; i < input_Q.size(); i++) {
-        myPipe.Q = input_Q[i];
-        myPipe.V = myPipe.get_V();
-        //шаг метода характеристик (зависимость от расхода)
-        double step_characteristics_method = myPipe.get_dt();
-        if (i == 0) {
+vector<double> characteristics_method (pipe myPipe, double& input_Q, int i, vector<double> time_modeling) {
+     
+    myPipe.Q = input_Q;
+    myPipe.V = myPipe.get_V();
+   //шаг метода характеристик (зависимость от расхода)
+    double step_characteristics_method = myPipe.get_dt();
+    if (i == 0) {
             time_modeling.push_back(step_characteristics_method);
-        }
-        else {
-            double time = time_modeling.back() + step_characteristics_method;
-            time_modeling.push_back(time);
-        }
     }
+    else {
+        double time = time_modeling.back() + step_characteristics_method;
+        time_modeling.push_back(time);
+     }
+  
     return time_modeling;
 }
 
-vector<double> interpolation(vector<double> time_modeling, vector<double>& input) {
-    vector<double> interpolation_value;
+double interpolation(double time_modeling, vector<double>& input) {
+    double interpolation_value;
     double step_diskretizatsii = 2000;
-    for (size_t i = 0; i < time_modeling.size(); i++) {
-        double step = time_modeling[i] / step_diskretizatsii;
-        double first_slice = floor(step);
-        double second_slice = ceil(step);
-
+    double step = time_modeling/ step_diskretizatsii;
+    double first_slice = floor(step);
+    double second_slice = ceil(step);
         if (first_slice >= input.size()) {
             first_slice = input.size() - 1;
         }
@@ -348,7 +344,7 @@ vector<double> interpolation(vector<double> time_modeling, vector<double>& input
             second_slice = input.size() - 1;
         }
 
-        double x = time_modeling[i];
+        double x = time_modeling;
         double x1 = first_slice * step_diskretizatsii; //время дискретизации имеющегося предыдущего значения 
         double x2 = second_slice * step_diskretizatsii; //время дискретизации имеющегося следующего значения 
         double y1 = input[first_slice];
@@ -361,9 +357,8 @@ vector<double> interpolation(vector<double> time_modeling, vector<double>& input
         else {
             y = y1 + (x - x1) * (y2 - y1) / (x2 - x1);
         }
-           interpolation_value.push_back(y);
-    }
-    return interpolation_value;
+           interpolation_value = y;
+   return interpolation_value;
 }
 
 
@@ -431,13 +426,41 @@ TEST(BLOCK3, TASK3) {
     vector<double> pressure_begin(myPipe.N, pressure[0]);
     
     //вектор состоящий из зна-ий времени моделирования (шаг метода характеристик)
-    vector<double> time_modeling = characteristics_method (myPipe,Q);
+    vector<double> time_modeling;
+    time_modeling.push_back(0.0);
+    vector<double> Q_int;
 
-    //вектор состоящий из зна-ий при интепроляции
-    vector<double> ro_int= interpolation(time_modeling, ro);
-    vector<double> u_int = interpolation(time_modeling, u);
-    vector<double> pressure_int = interpolation(time_modeling, pressure);
-    vector<double> Q_int = interpolation(time_modeling, Q);
+
+    vector<double> ro_int;
+    vector<double> u_int;
+    vector<double> pressure_int;
+
+    for (size_t i = 0; i < total_layers; i++) {
+
+        if (i == 0) {
+            Q_int.push_back(Q[i]);
+            time_modeling = characteristics_method(myPipe, Q[0], i, time_modeling);
+            Q_int.push_back(interpolation(time_modeling[i + 1], Q));
+            //вектор состоящий из зна-ий при интепроляции
+            ro_int.push_back(interpolation(time_modeling[i], ro));
+            u_int.push_back(interpolation(time_modeling[i], u));
+            pressure_int.push_back(interpolation(time_modeling[i], pressure));
+        }
+        else
+        {
+            time_modeling = characteristics_method(myPipe, Q_int[i], i, time_modeling);
+            Q_int.push_back(interpolation(time_modeling[i+1], Q));
+            //вектор состоящий из зна-ий при интепроляции
+            ro_int.push_back(interpolation(time_modeling[i], ro));
+            u_int.push_back(interpolation(time_modeling[i], u));
+            pressure_int.push_back(interpolation(time_modeling[i], pressure));
+
+        }
+    }
+
+
+  
+   
     
     ring_buffer_t<vector<vector<double>>> buffer(2, { ro_begin, u_begin,pressure_begin });
 
@@ -464,8 +487,8 @@ TEST(BLOCK3, TASK3) {
             myPipe.time = time_modeling[i];
             euler(myPipe, buffer, i);
             excel_last_pressure("pressure_last_1.3.csv", myPipe, buffer.previous(), i);
-            party_layer(myPipe, ro_int[i+1], buffer.current()[0], buffer.previous()[0]);
-            party_layer(myPipe, u_int[i+1], buffer.current()[1], buffer.previous()[1]);
+            party_layer(myPipe, ro_int[i], buffer.current()[0], buffer.previous()[0]);
+            party_layer(myPipe, u_int[i], buffer.current()[1], buffer.previous()[1]);
             excel("3block_1.3.csv", myPipe, buffer.previous(), i, pressure_first_layer);
             buffer.advance(1);
             cout << pressure_int[i] << ", ";
