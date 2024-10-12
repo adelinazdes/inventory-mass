@@ -52,13 +52,11 @@ struct pipe
         return V * S;
     }
 
-
     double cross_sectional_area() const {
         double D = get_inner_diameter();
         double S = M_PI * D * D / 4;
         return S;
     }
-
 
     double get_V() const {
         double D = get_inner_diameter();
@@ -98,16 +96,13 @@ struct density_viscosity_pressure_layer
 
 // след. слой предыдущий слой + новое значение на входе
 void party_layer(pipe myPipe, double parametr, vector<double>& current_layer, vector<double>& previous_layer) {
-
-    //смещение предыдущего слоя и запись граничного условия
+     //смещение предыдущего слоя и запись граничного условия
     current_layer[0] = parametr;
     for (size_t i = 1; i < myPipe.N; i++)
     {
         current_layer[i] = previous_layer[i - 1];
     }
 }
-
-
 
 vector<double>  euler(pipe myPipe, ring_buffer_t<density_viscosity_pressure_layer>& buffer, int i) {
     double p_0 = myPipe.p_0;
@@ -159,8 +154,7 @@ void excel(const string& filename, pipe myPipe, density_viscosity_pressure_layer
             outFile.close();
 
         }
-
-    }
+     }
 }
 
 /// запись в файл excel значений давлений в последней точке каждого слоя
@@ -212,123 +206,6 @@ pipe block3_pipe()
     return myPipe;
 }
 
-// @brief Ступенчатая партия, вытеснение
-//TEST(BLOCK3, TASK1)
-//{
-//    pipe myPipe = block3_pipe();
-//
-//    vector<double> ro;
-//    ro = { 800 }; //значения плотности на входе трубы
-//
-//    vector<double> u;
-//    u = { 10e-6 }; //значения кинемат. вязкости на входе трубы
-//
-//    vector<double> pressure;
-//    pressure = { 0 };//значения давлений
-//
-//    Проблемно-ориентированный буфер из 3 слоев
-//    density_viscosity_pressure_layer initialization_layer;
-//    initialization_layer.density = vector<double>(myPipe.N,900);
-//    initialization_layer.viscosity = vector<double>(myPipe.N, 15e-6);
-//    initialization_layer.pressure = vector<double>(myPipe.N,0);
-//
-//    ring_buffer_t<density_viscosity_pressure_layer> buffer(2, initialization_layer);
-//
-//    vector<double> pressure_first_layer;// вектор содержащий значения давлений первого слоя 
-//
-//    for (size_t i = 0; i < myPipe.get_n() + 2; i++) {
-//        if (i == 0) {
-//            myPipe.time = myPipe.get_dt() * i;
-//            excel_last_pressure("pressure_last_1.1.csv", myPipe, buffer.current(), i);
-//            party_layer(myPipe, ro[0], buffer.current().density, buffer.previous().density);
-//            party_layer(myPipe, u[0], buffer.current().viscosity, buffer.previous().viscosity);
-//            pressure_first_layer = euler(myPipe, buffer, i);
-//            excel("3block_1.1.csv", myPipe, buffer.previous(), i, pressure_first_layer);
-//            buffer.advance(1);
-//        }
-//        else {
-//            myPipe.time = myPipe.get_dt() * i;
-//            euler(myPipe, buffer, i);
-//            excel_last_pressure("pressure_last_1.1.csv", myPipe, buffer.current(), i);
-//            party_layer(myPipe, ro[0], buffer.current().density, buffer.previous().density);
-//            party_layer(myPipe, u[0], buffer.current().viscosity, buffer.previous().viscosity);
-//            excel("3block_1.1.csv", myPipe, buffer.previous(), i, pressure_first_layer);
-//            buffer.advance(1);
-//        }
-//    }
-//
-//
-//}
-
-
-///// @brief Импульсная партия
-//TEST(BLOCK3, TASK2) {
-//
-//    pipe myPipe = block3_pipe();
-//
-//    double impulse_party_duration = 5 * 3600; // длительность захода импульсной партии, сек
-//    size_t impulse_party_layers = ceil(impulse_party_duration / myPipe.get_dt());// кол-во слоев для импульсной партии
-//
-//    // время моделирования - время вытеснения начальной партии плюс длительность импульсной партии
-//    size_t total_layers = myPipe.get_n() + impulse_party_layers + 2;
-//
-//    vector<double> ro;
-//    ro = {};
-//    // заполняем значениями импульсной партии
-//    for (int k = 0; k < impulse_party_layers; ++k) {
-//        ro.push_back(870);
-//    }
-//
-//    // Заполняем оставшиеся 50 элементов значением основной партии
-//    for (int l = impulse_party_layers; l < total_layers; ++l) {
-//        ro.push_back(830);
-//    }
-//
-//    vector<double> u;
-//    u = {  };
-//    // заполняем значениями импульсной партии
-//    for (int k = 0; k < impulse_party_layers; ++k) {
-//        u.push_back(19e-6);
-//    }
-//
-//    // Заполняем оставшиеся 50 элементов значением основной партии
-//    for (int l = impulse_party_layers; l < total_layers; ++l) {
-//        u.push_back(15e-6);
-//    }
-//    //Проблемно-ориентированный буфер из 3 слоев
-//    density_viscosity_pressure_layer initialization_layer;
-//    initialization_layer.density = vector<double>(myPipe.N, 830);
-//    initialization_layer.viscosity = vector<double>(myPipe.N, 15e-6);
-//    initialization_layer.pressure = vector<double>(myPipe.N, 0);
-//
-//    ring_buffer_t<density_viscosity_pressure_layer> buffer(2, initialization_layer);
-//    
-//    vector<double> pressure_first_layer;// вектор содержащий значения давлений первого слоя 
-//
-//    for (size_t i = 0; i < total_layers; i++) {
-//        if (i == 0) {
-//            myPipe.time = myPipe.get_dt() * i;
-//            euler(myPipe, buffer, i);
-//            excel_last_pressure("pressure_last_1.2.csv", myPipe, buffer.current(), i);
-//            party_layer(myPipe, ro[i], buffer.current().density, buffer.previous().density);
-//            party_layer(myPipe, u[i], buffer.current().viscosity, buffer.previous().viscosity);
-//            pressure_first_layer = euler(myPipe, buffer, i);
-//            excel("3block_1.2.csv", myPipe, buffer.previous(), i, pressure_first_layer);
-//            buffer.advance(1);
-//        }
-//        else {
-//            myPipe.time = myPipe.get_dt() * i;
-//            euler(myPipe, buffer, i);
-//            excel_last_pressure("pressure_last_1.2.csv", myPipe, buffer.current(), i);
-//            party_layer(myPipe, ro[i], buffer.current().density, buffer.previous().density);
-//            party_layer(myPipe, u[i], buffer.current().viscosity, buffer.previous().viscosity);
-//            excel("3block_1.2.csv", myPipe, buffer.previous(), i, pressure_first_layer);
-//            buffer.advance(1);
-//        }
-//    }
-//}
-
-
 /// @brief Труба из заданий блока 3_ задача 3
 pipe block3_task3_pipe()
 {
@@ -342,8 +219,6 @@ pipe block3_task3_pipe()
     myPipe.abc = 15e-6;
     return myPipe;
 }
-
-
 
 vector<double> time_step_characteristics_method(pipe myPipe, double& input_Q, int i, vector<double> time_modeling) {
 
@@ -392,8 +267,6 @@ double interpolation_scalar(double time_modeling, vector<double>& input) {
     return interpolation_value;
 }
 
-
-
 vector<double> interpolation_vector(vector<double> time_modeling, vector<double>& input) {
     vector<double> interpolation_value;
     double step_diskretizatsii = 2000;
@@ -403,8 +276,6 @@ vector<double> interpolation_vector(vector<double> time_modeling, vector<double>
     }
     return interpolation_value;
 }
-
-
 
 
 // плотность с учетом сжимаемости
@@ -422,9 +293,6 @@ vector<double> density(pipe myPipe, density_viscosity_pressure_layer& previous_l
     return density;
 }
 
-
-
-
 //расчет массы в каждой координатной точке  сетки
 
 vector<double> massa (pipe myPipe,  density_viscosity_pressure_layer& previous_layer, vector<double> wall_layer, vector<double> density_layer) {
@@ -440,8 +308,6 @@ vector<double> massa (pipe myPipe,  density_viscosity_pressure_layer& previous_l
     }
     return massa;
 }
-
-
 
 //расчет S в каждой координатной точке  сетки с учетом растяжимости стенки трубопровода 
 
@@ -465,9 +331,146 @@ vector<double> wall (pipe myPipe, density_viscosity_pressure_layer& previous_lay
 
 
 
+//расчет массы без учета сжимаемости и растяжимости на каждом шаге сетки
+
+vector<double> massa_without( pipe myPipe, int i, density_viscosity_pressure_layer& previous_layer) {
+
+    vector<double> massa(myPipe.N, 0.0);
+    double dx = myPipe.get_dx();
+
+    for (int j = 1; j < myPipe.N; j++) {
+        double mean_density = 0.5 * (previous_layer.density[j-1] + previous_layer.density[j]);
+        double S = myPipe.cross_sectional_area();
+        double massa_section = dx *S * mean_density;
+        massa[j] = massa[j - 1] + massa_section;
+    }
+    return massa;
+}
 
 
-/// @brief задача 3
+
+/// @brief подсчет массы с учетом сжимаемости нефти и растяжимости стенок
+TEST(BLOCK3, WITHOUT) {
+
+    pipe myPipe = block3_task3_pipe();
+
+    //шаг дискретизации краевых условий (время через которое нач.условия изменяется)
+    double step_diskretizatsii = 2000;
+
+    //шаг метода характеристик (зависимость от расхода)
+    double step_characteristics_method;
+
+    //значения плотности на входе трубы
+    vector<double> ro;
+    ro = { 900,
+        880,
+        880,
+        890,
+        890,
+        880,
+        880,
+        870 };
+
+    //значения кинемат. вязкости на входе трубы
+    vector<double> u;
+    u = { 0.000015,
+        0.000013,
+        0.000013,
+        0.000014,
+        0.000014,
+        0.000013,
+        0.000013,
+        0.000012 };
+
+    //значения давления на входе трубы
+    vector<double> pressure;
+    pressure = { 6000000,
+        5800000,
+        5800000,
+        5900000,
+        5900000,
+        5800000,
+        5800000,
+        5700000 };
+
+    //значения расхода
+    vector<double> Q;
+    Q = { 0.192325,
+        0.200000,
+        0.210000,
+        0.200000,
+        0.180000,
+        0.210000,
+        0.210000,
+        0.210000 };
+
+    //кол-во слоев = кол-во значений на входе
+    size_t  total_layers = Q.size();
+
+    //вектор состоящий из зна-ий времени моделирования (шаг метода характеристик)
+    vector<double> time_modeling;
+    time_modeling.push_back(0.0);
+
+    vector<double> Q_int;
+    Q_int.push_back(Q[0]);
+
+    for (size_t i = 0; i < total_layers - 1; i++) {
+        time_modeling = time_step_characteristics_method(myPipe, Q_int[i], i, time_modeling);
+        Q_int.push_back(interpolation_scalar(time_modeling[i + 1], Q));
+
+    }
+
+    //вектор состоящий из зна-ий при интепроляции
+    vector<double> ro_int = interpolation_vector(time_modeling, ro);
+    vector<double> u_int = interpolation_vector(time_modeling, u);
+    vector<double> pressure_int = interpolation_vector(time_modeling, pressure);
+
+    vector<double> pressure_first_layer;// вектор содержащий значения давлений первого слоя 
+
+    //Проблемно-ориентированный буфер из 3 слоев
+    density_viscosity_pressure_layer initialization_layer;
+    initialization_layer.density = vector<double>(myPipe.N, ro[0]);
+    initialization_layer.viscosity = vector<double>(myPipe.N, u[0]);
+    initialization_layer.pressure = vector<double>(myPipe.N, pressure[0]);
+
+    ring_buffer_t<density_viscosity_pressure_layer> buffer(2, initialization_layer);
+
+
+
+    for (size_t i = 0; i < total_layers; i++) {
+        myPipe.Q = Q_int[i];
+        myPipe.V = myPipe.get_V();
+        myPipe.p_0 = pressure_int[i];
+        myPipe.time = time_modeling[i];
+        euler(myPipe, buffer, i);
+        party_layer(myPipe, ro_int[i], buffer.current().density, buffer.previous().density);
+        party_layer(myPipe, u_int[i], buffer.current().viscosity, buffer.previous().viscosity);
+
+        if (i == 0) {
+            pressure_first_layer = euler(myPipe, buffer, i);
+        }
+        double wall= myPipe.cross_sectional_area();
+        vector<double> wall_layer(myPipe.N, wall);
+        vector<double> density_layer(myPipe.N, 0);
+        vector <double> massa_layer = massa_without(myPipe,i, buffer.previous());
+        excel_last_pressure("pressure_last_without.csv", myPipe, buffer.previous(), i, wall_layer);
+        excel("massa_without.csv", myPipe, buffer.previous(), i, pressure_first_layer, massa_layer, wall_layer, density_layer);
+
+        buffer.advance(1);
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+/// @brief подсчет массы с учетом сжимаемости нефти и растяжимости стенок
 TEST(BLOCK3, TASK3) {
 
     pipe myPipe = block3_task3_pipe();
@@ -570,8 +573,8 @@ TEST(BLOCK3, TASK3) {
         vector <double> wall_layer = wall(myPipe, buffer.previous());
         vector <double> density_layer = density(myPipe, buffer.previous());
         vector <double> massa_layer =massa(myPipe, buffer.previous(), wall_layer,density_layer);
-        excel_last_pressure("pressure_last_1.3.csv", myPipe, buffer.previous(), i, wall_layer);
-        excel("3block_1.3.csv", myPipe, buffer.previous(), i, pressure_first_layer, massa_layer, wall_layer, density_layer);
+        excel_last_pressure("pressure_last.csv", myPipe, buffer.previous(), i, wall_layer);
+        excel("massa.csv", myPipe, buffer.previous(), i, pressure_first_layer, massa_layer, wall_layer, density_layer);
 
         buffer.advance(1);
     }
